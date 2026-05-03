@@ -1,0 +1,74 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Post Request | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'client_dashboard' %}">Dashboard</a>
+<a class="active" href="{% url 'client_request_new' %}">Request Session</a>
+<a href="{% url 'client_payments' %}">Payments</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">New Work Request</p>
+        <h1>Post a request</h1>
+    </div>
+</header>
+
+<section class="panel form-panel">
+    <h2>Tell us what you need</h2>
+    <form method="post" enctype="multipart/form-data" action="{% url 'client_request_new' %}" class="stacked-form" data-confirm="Submit this request?">
+        {% csrf_token %}
+        <label>Project {{ request_form.project }}</label>
+        <label>Title {{ request_form.title }}</label>
+        <label>Service Type {{ request_form.service_type }}</label>
+        <label>Description {{ request_form.description }}</label>
+        <label>Upload Files
+            <input type="file" name="client_files" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,.mp4,.mov,.avi,.mkv,.txt">
+        </label>
+        <button class="btn primary" type="submit">Submit Request</button>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Request History</h2>
+        <span class="muted">{{ history_requests|length }} records</span>
+    </div>
+    <form method="get" class="filter-grid">
+        <label>Project
+            <select name="history_project">
+                <option value="">All projects</option>
+                {% for project in history_projects %}
+                    <option value="{{ project.pk }}" {% if selected_history_project == project.pk|stringformat:'s' %}selected{% endif %}>{{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Sort
+            <select name="history_sort">
+                <option value="recent" {% if selected_history_sort == 'recent' %}selected{% endif %}>Newest first</option>
+                <option value="oldest" {% if selected_history_sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+            </select>
+        </label>
+        <label>Date from <input type="date" name="history_from" value="{{ selected_history_from }}"></label>
+        <label>Date to <input type="date" name="history_to" value="{{ selected_history_to }}"></label>
+        <button class="btn secondary full-span" type="submit">Apply Filters</button>
+    </form>
+    <div class="admin-request-grid">
+        {% for req in history_requests %}
+            <article class="request-card hover-card request-history-card" data-modal-title="{{ req.title }}" data-modal-body="Project: {{ req.project.name|default:'No project' }}|Service: {{ req.get_service_type_display }}|Status: {{ req.get_status_display }}|Posted: {{ req.created_at|date:'M d, Y h:i A' }}|Description: {{ req.description }}{% if req.admin_response %}|Admin Response: {{ req.admin_response }}{% endif %}">
+                <span class="badge {{ req.status }}">{{ req.get_status_display }}</span>
+                <h3>{{ req.title }}</h3>
+                <p>{{ req.description|truncatewords:18 }}</p>
+                <footer>
+                    <span>{{ req.project.name|default:'No project' }} · {{ req.created_at|date:'M d, Y' }}</span>
+                    <button type="button" class="link-btn more-info">More Info</button>
+                </footer>
+            </article>
+        {% empty %}
+            <p class="empty">No requests found for this filter.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

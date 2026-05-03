@@ -1,0 +1,107 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Manage Projects | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'admin_dashboard' %}">Dashboard</a>
+<a href="{% url 'admin_clients' %}">Manage Clients</a>
+<a href="{% url 'admin_managers' %}">Managers</a>
+<a class="active" href="{% url 'admin_projects' %}">Manage Projects</a>
+<a href="{% url 'admin_requests' %}">Client Requests</a>
+<a href="{% url 'admin_payments' %}">Client Payment</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Project Control</p>
+        <h1>Manage projects</h1>
+    </div>
+    <div class="header-actions">
+        <button class="btn secondary" type="button" data-toggle-panel="create-project-panel">Create Project</button>
+    </div>
+</header>
+
+<div class="wide-page-grid">
+    <section class="panel collapsible-panel form-panel" id="create-project-panel" hidden>
+        <h2>Create Project</h2>
+        <form method="post" class="stacked-form">
+            {% csrf_token %}
+            <label>Project Name {{ form.name }}</label>
+            <label>Description {{ form.description }}</label>
+            <label>Status {{ form.status }}</label>
+            <div class="field-label">Assign Clients</div>
+            <div class="multi-select" data-multi-select>
+                <button class="multi-select-toggle" type="button" data-multi-toggle>
+                    <span data-multi-label>Select</span>
+                </button>
+                <div class="multi-select-menu" data-multi-menu hidden>
+                    {{ form.clients }}
+                </div>
+            </div>
+            <div class="field-label">Assign Managers</div>
+            <div class="multi-select" data-multi-select>
+                <button class="multi-select-toggle" type="button" data-multi-toggle>
+                    <span data-multi-label>Select</span>
+                </button>
+                <div class="multi-select-menu" data-multi-menu hidden>
+                    {{ form.managers }}
+                </div>
+            </div>
+            <div class="locked-admin">Admin is assigned automatically as project manager and is not listed as a client.</div>
+            <button class="btn primary" type="submit">Create Project</button>
+        </form>
+        {% if form.errors %}
+            <div class="form-errors">{{ form.errors }}</div>
+        {% endif %}
+    </section>
+
+    <section class="panel wide-panel">
+        <div class="panel-heading">
+            <h2>Project List</h2>
+            <span class="muted">{{ projects|length }} projects</span>
+        </div>
+        <div class="project-grid project-grid-cards">
+            {% for project in projects %}
+                <article class="project-card hover-card selectable-card" data-selectable-card>
+                    <div class="card-tools">
+                        <button class="icon-back" type="button" data-selection-back title="Back">‹</button>
+                        <input class="card-check" type="checkbox" aria-label="Select project">
+                        <a class="icon-edit" href="{% url 'admin_project_edit' project.pk %}" title="Edit project">✎</a>
+                    </div>
+                    <div>
+                        <span class="badge {{ project.status }}">{{ project.get_status_display }}</span>
+                        <h3>{{ project.name }}</h3>
+                        <p>{{ project.description|default:'No project description added.'|truncatechars:120 }}</p>
+                    </div>
+                    <div class="project-clients">
+                        <strong>Managers</strong>
+                        {% for manager in project.managers.all %}
+                            <span>{{ manager.get_full_name|default:manager.username }}</span>
+                        {% empty %}
+                            <span>Admin assigned on new projects</span>
+                        {% endfor %}
+                    </div>
+                    <div class="project-clients">
+                        <strong>Clients</strong>
+                        {% for client in project.clients.all %}
+                            <span>{{ client.get_full_name|default:client.username }}</span>
+                        {% empty %}
+                            <span>No clients assigned</span>
+                        {% endfor %}
+                    </div>
+                    <div class="row-actions">
+                        <form class="delete-form" method="post" action="{% url 'admin_project_delete' project.pk %}" data-confirm="Are you sure want to delete?">
+                            {% csrf_token %}
+                            <button class="link-btn danger" type="submit">Delete</button>
+                        </form>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="empty">No projects created yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

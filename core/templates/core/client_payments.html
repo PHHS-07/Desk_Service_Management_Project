@@ -1,0 +1,178 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Payments | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'client_dashboard' %}">Dashboard</a>
+<a href="{% url 'client_request_new' %}">Post a Request</a>
+<a class="active" href="{% url 'client_payments' %}">Payments</a>
+{% endblock %}
+
+{% block content %}
+<div class="client-payments-page">
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Billing</p>
+        <h1>Payment status</h1>
+    </div>
+    <button class="btn primary" type="button" data-toggle-panel="make-payment-panel">Make Payment</button>
+</header>
+
+<section class="panel collapsible-panel form-panel" id="make-payment-panel" hidden>
+    <h2>Upload Payment Proof</h2>
+    <form method="post" enctype="multipart/form-data" class="stacked-form">
+        {% csrf_token %}
+        <label>Payment Request {{ form.payment }}</label>
+        <label>Amount Paid {{ form.amount }}</label>
+        <p class="muted" id="payment-balance-hint">Select a payment request to auto-fill the remaining balance.</p>
+        <div class="upi-panel">
+            <strong>Pay via UPI</strong>
+            <span class="muted" id="upi-hint">UPI ID: phariharasudhan2004-1@oksbi</span>
+            <img id="upi-qr-image" alt="UPI QR Code" hidden>
+            <a id="upi-pay-link" class="btn secondary" href="#" target="_blank" rel="noopener" hidden>Pay Through UPI</a>
+        </div>
+        <label>Upload Proof {{ form.proof_image }}</label>
+        <label>Note {{ form.note }}</label>
+        <button class="btn primary" type="submit">Submit for Review</button>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Your Payments</h2>
+        <span class="muted">{{ payments|length }} records</span>
+    </div>
+    <div class="payment-card-grid">
+        {% for payment in payments %}
+            <article class="payment-card hover-card">
+                <div class="payment-card-head">
+                    <div><strong>{{ payment.request.title|default:'General payment' }}</strong><span>{{ payment.project.name|default:'No project' }} - {{ payment.date|date:'M d, Y' }}</span></div>
+                    <span class="badge {{ payment.status }}">{{ payment.get_status_display }}</span>
+                </div>
+                <div class="amount-stack">
+                    <strong>Rs. {{ payment.paid_amount }} / Rs. {{ payment.amount }}</strong>
+                    <span>Remaining Rs. {{ payment.remaining_amount }}</span>
+                </div>
+            </article>
+        {% empty %}
+            <p class="empty">No payment records yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>My Ledger</h2>
+        <span class="muted">Approved recorded payments</span>
+    </div>
+    <div class="row-actions">
+        <a class="btn secondary" href="{% url 'client_payments' %}?download=ledger">Download Ledger</a>
+    </div>
+    <div class="ledger-table">
+        <table>
+            <thead><tr><th>Date</th><th>Project</th><th>Purpose</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+            <tbody>
+            {% for payment in ledger_payments %}
+                <tr>
+                    <td data-label="Date">{{ payment.date|date:'M d, Y' }}</td>
+                    <td data-label="Project">{{ payment.project.name|default:'No project' }}</td>
+                    <td data-label="Purpose">{{ payment.request.title|default:'General payment' }}</td>
+                    <td data-label="Paid">Rs. {{ payment.paid_amount }}</td>
+                    <td data-label="Balance">Rs. {{ payment.remaining_amount }}</td>
+                    <td data-label="Status"><span class="badge {{ payment.status }}">{{ payment.get_status_display }}</span></td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="empty">No approved ledger payments yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Proof History</h2>
+        <span class="muted">{{ proofs|length }} uploads</span>
+    </div>
+    <div class="payment-card-grid">
+        {% for proof in proofs %}
+            <article class="payment-card hover-card">
+                <span class="badge {{ proof.status }}">{{ proof.get_status_display }}</span>
+                <strong>Proof #{{ proof.pk }} - {{ proof.payment.project.name|default:'Payment proof' }}</strong>
+                <span>Rs. {{ proof.amount }} - {{ proof.created_at|date:'M d, Y h:i A' }}</span>
+                {% if proof.proof_image %}
+                    <div class="row-actions">
+                        <a class="link-btn" href="{{ proof.proof_image.url }}" target="_blank">View Upload</a>
+                        <a class="link-btn" href="{{ proof.proof_image.url }}" download>Download</a>
+                    </div>
+                {% endif %}
+            </article>
+        {% empty %}
+            <p class="empty">No uploaded proofs yet.</p>
+        {% endfor %}
+    </div>
+</section>
+</div>
+{{ payment_balance_map|json_script:"payment-balance-map" }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const balanceDataEl = document.getElementById('payment-balance-map');
+    const paymentSelect = document.getElementById('id_payment');
+    const amountInput = document.getElementById('id_amount');
+    const hint = document.getElementById('payment-balance-hint');
+    const qrImage = document.getElementById('upi-qr-image');
+    const upiLink = document.getElementById('upi-pay-link');
+    const upiHint = document.getElementById('upi-hint');
+    const upiId = 'phariharasudhan2004-1@oksbi';
+    if (!balanceDataEl || !paymentSelect || !amountInput) return;
+    const balanceMap = JSON.parse(balanceDataEl.textContent);
+    const updateUpi = () => {
+        const amount = parseFloat(amountInput.value || '0');
+        const selectedText = paymentSelect.options[paymentSelect.selectedIndex]?.text || 'Roriri Desk Payment';
+        if (!(amount > 0)) {
+            if (qrImage) qrImage.hidden = true;
+            if (upiLink) upiLink.hidden = true;
+            return;
+        }
+        const payeeName = 'Roriri Desk';
+        const note = selectedText.slice(0, 70);
+        const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${encodeURIComponent(amount.toFixed(2))}&cu=INR&tn=${encodeURIComponent(note)}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUrl)}`;
+        if (qrImage) {
+            qrImage.src = qrUrl;
+            qrImage.hidden = false;
+        }
+        if (upiLink) {
+            upiLink.href = upiUrl;
+            upiLink.hidden = false;
+        }
+        if (upiHint) upiHint.textContent = `UPI ID: ${upiId} - Amount: Rs. ${amount.toFixed(2)}`;
+    };
+    const updateAmount = () => {
+        const selected = paymentSelect.value;
+        const balance = balanceMap[selected];
+        if (!balance) {
+            amountInput.removeAttribute('max');
+            if (hint) hint.textContent = 'Select a payment request to auto-fill the remaining balance.';
+            updateUpi();
+            return;
+        }
+        amountInput.value = balance;
+        amountInput.max = balance;
+        if (hint) hint.textContent = `Balance to be paid: Rs. ${balance}`;
+        updateUpi();
+    };
+    paymentSelect.addEventListener('change', updateAmount);
+    amountInput.addEventListener('input', () => {
+        const selected = paymentSelect.value;
+        const balance = parseFloat(balanceMap[selected] || '0');
+        const entered = parseFloat(amountInput.value || '0');
+        if (balance > 0 && entered > balance) {
+            amountInput.value = balance.toFixed(2);
+        }
+        updateUpi();
+    });
+    updateAmount();
+});
+</script>
+{% endblock %}

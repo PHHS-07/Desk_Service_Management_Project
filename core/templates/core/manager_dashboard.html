@@ -1,0 +1,44 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Manager Dashboard | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a class="active" href="{% url 'manager_dashboard' %}">Dashboard</a>
+<a href="{% url 'manager_projects' %}">Projects</a>
+<a href="{% url 'manager_requests' %}">Client Requests</a>
+<a href="{% url 'manager_admin_requests' %}">Admin Requests</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Manager Workspace</p>
+        <h1>Assigned projects</h1>
+    </div>
+</header>
+
+<section class="stats-grid compact">
+    <article class="stat-card"><span>Projects</span><strong>{{ stats.projects }}</strong></article>
+    <article class="stat-card"><span>Requests</span><strong>{{ stats.requests }}</strong></article>
+    <article class="stat-card warn"><span>Pending</span><strong>{{ stats.pending }}</strong></article>
+    <article class="stat-card success"><span>Completed</span><strong>{{ stats.completed }}</strong></article>
+</section>
+
+<section class="panel">
+    <div class="panel-heading"><h2>Recent Requests</h2><a class="link-btn" href="{% url 'manager_requests' %}">View all</a></div>
+    <div class="request-cards dashboard-preview">
+        {% for item in requests %}
+            <article class="request-card hover-card">
+                <span class="badge {{ item.status }}">{{ item.get_status_display }}</span>
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description|truncatechars:90 }}</p>
+                <footer>{{ item.project.name }} · {{ item.created_at|date:'M d, Y h:i A' }}</footer>
+                <a class="link-btn" href="{% url 'manager_request_detail' item.pk %}">Open</a>
+            </article>
+        {% empty %}
+            <p class="empty">No requests assigned yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

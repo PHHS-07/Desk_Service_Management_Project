@@ -1,0 +1,20 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block body %}
+<main class="auth-shell">
+    <section class="auth-brand">
+        <div class="auth-brand-head">
+            <div class="brand-mark"><img src="{% static 'core/img/new_logo.png' %}" alt="Roriri logo"></div>
+            <strong class="auth-brand-title" style="color:#ffffff;font-size:1.35rem;font-weight:900;line-height:1;">Roriri Desk</strong>
+        </div>
+        <p class="eyebrow">Project Management System · Roriri Desk</p>
+        <h1>Client work, requests, payments, and delivery updates in one calm workspace.</h1>   
+        <p class="auth-copy">A professional portal for teams that need clarity from first request to final handoff.</p>
+    </section>
+    <section class="auth-panel">
+        {% include 'core/partials/messages.html' %}
+        {% block auth_content %}{% endblock %}
+    </section>
+</main>
+{% endblock %}

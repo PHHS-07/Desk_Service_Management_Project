@@ -1,0 +1,24 @@
+{% extends 'core/auth_base.html' %}
+
+{% block title %}Client Signup | Roriri Project Desk{% endblock %}
+
+{% block auth_content %}
+<div class="auth-card wide">
+    <p class="eyebrow">Client access</p>
+    <h2>Create your client account</h2>
+    <form method="post" class="stacked-form two-col">
+        {% csrf_token %}
+        <label>First name {{ form.first_name }}</label>
+        <label>Last name {{ form.last_name }}</label>
+        <label>Username {{ form.username }}</label>
+        <label>Email {{ form.email }}</label>
+        <label>Password {{ form.password1 }}</label>
+        <label>Confirm password {{ form.password2 }}</label>
+        <button class="btn primary full-span" type="submit">Create Account</button>
+    </form>
+    {% if form.errors %}
+        <div class="form-errors">{{ form.errors }}</div>
+    {% endif %}
+    <p class="muted center">Already registered? <a href="{% url 'login' %}">Login</a></p>
+</div>
+{% endblock %}

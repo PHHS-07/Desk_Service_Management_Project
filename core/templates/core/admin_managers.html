@@ -1,0 +1,118 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Managers | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'admin_dashboard' %}">Dashboard</a>
+<a href="{% url 'admin_clients' %}">Manage Clients</a>
+<a class="active" href="{% url 'admin_managers' %}">Managers</a>
+<a href="{% url 'admin_projects' %}">Manage Projects</a>
+<a href="{% url 'admin_requests' %}">Client Requests</a>
+<a href="{% url 'admin_payments' %}">Client Payment</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Managerial Roles</p>
+        <h1>Managers</h1>
+    </div>
+    <button class="btn secondary" type="button" data-toggle-panel="add-manager-panel">Add Manager</button>
+</header>
+
+<div class="wide-page-grid">
+    <section class="panel collapsible-panel form-panel manager-form-panel wide-panel" id="add-manager-panel" hidden>
+        <h2>Add Manager</h2>
+        <form method="post" class="stacked-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <label>Name {{ form.name }}</label>
+            {{ form.name.errors }}
+            <label>Username {{ form.username }}</label>
+            {{ form.username.errors }}
+            <label>Email {{ form.email }}</label>
+            {{ form.email.errors }}
+            <label>Mobile Number {{ form.mobile_number }}</label>
+            {{ form.mobile_number.errors }}
+            <label>Role {{ form.role }}</label>
+            {{ form.role.errors }}
+            <div class="field-label">Assign Projects</div>
+            <div class="multi-select" data-multi-select>
+                <button class="multi-select-toggle" type="button" data-multi-toggle>
+                    <span data-multi-label>Select</span>
+                </button>
+                <div class="multi-select-menu" data-multi-menu hidden>
+                    {{ form.projects }}
+                </div>
+            </div>
+            <label>Password {{ form.password1 }}</label>
+            {{ form.password1.errors }}
+            <label>Confirm Password {{ form.password2 }}</label>
+            {{ form.password2.errors }}
+            <button class="btn primary" type="submit">Create Manager</button>
+        </form>
+        {% if form.errors %}
+            <div class="form-errors">{{ form.errors }}</div>
+        {% endif %}
+    </section>
+
+    <section class="panel wide-panel">
+        <div class="panel-heading">
+            <h2>Manager Details</h2>
+            <span class="muted">{{ managers|length }} managers</span>
+        </div>
+        <div class="client-card-grid">
+            {% for manager in managers %}
+                <article class="client-detail-card hover-card selectable-card" data-selectable-card>
+                    <div class="card-tools">
+                        <button class="icon-back" type="button" data-selection-back title="Back">‹</button>
+                        <input class="card-check" type="checkbox" aria-label="Select manager">
+                        <a class="icon-edit" href="{% url 'admin_manager_edit' manager.pk %}" title="Edit manager">✎</a>
+                    </div>
+                    <div>
+                        <h3>{{ manager.get_full_name|default:manager.username }}</h3>
+                        <p>@{{ manager.username }}</p>
+                    </div>
+                    <div class="detail-pairs">
+                        <span>Email<strong>{{ manager.email|default:'-' }}</strong></span>
+                        <span>Mobile<strong>{{ manager.manager_profile.mobile_number|default:'No mobile added' }}</strong></span>
+                    </div>
+                    <div class="project-clients">
+                        <strong>Projects</strong>
+                        {% for project in manager.managed_projects.all %}
+                            <span>{{ project.name }}</span>
+                        {% empty %}
+                            <span>Not assigned</span>
+                        {% endfor %}
+                    </div>
+                    <div class="row-actions">
+                        <form class="delete-form" method="post" action="{% url 'admin_manager_delete' manager.pk %}" data-confirm="Are you sure want to delete?">
+                            {% csrf_token %}
+                            <button class="link-btn danger" type="submit">Delete</button>
+                        </form>
+                        <form method="post" action="{% url 'admin_manager_send_reset' manager.pk %}" style="display:inline; margin-left:8px;">
+                            {% csrf_token %}
+                            <button class="link-btn" type="submit">Send Reset</button>
+                        </form>
+                        <button class="link-btn primary" type="button" style="margin-left:8px;" data-toggle-panel="message-panel-{{ manager.pk }}">Message</button>
+                    </div>
+                    <div class="panel message-panel collapsible-panel" id="message-panel-{{ manager.pk }}" hidden style="margin-top:15px; border-top:1px solid var(--line); padding-top:15px;">
+                        <h3>Send Request to {{ manager.get_full_name|default:manager.username }}</h3>
+                        <form method="post" action="{% url 'admin_send_manager_message' manager.pk %}" class="stacked-form">
+                            {% csrf_token %}
+                            <label>Title <input type="text" name="title" placeholder="Request Subject" required></label>
+                            <label>Message <textarea name="message" rows="3" placeholder="Details..." required></textarea></label>
+                            <button class="btn primary" type="submit">Send Admin Request</button>
+                        </form>
+                    </div>
+                </article>
+            {% empty %}
+                <p class="empty">No managers added yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

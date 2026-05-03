@@ -1,0 +1,44 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Edit Manager | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'admin_dashboard' %}">Dashboard</a>
+<a href="{% url 'admin_clients' %}">Manage Clients</a>
+<a class="active" href="{% url 'admin_managers' %}">Managers</a>
+<a href="{% url 'admin_projects' %}">Manage Projects</a>
+<a href="{% url 'admin_requests' %}">Client Requests</a>
+<a href="{% url 'admin_payments' %}">Client Payment</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Manager Record</p>
+        <h1>Edit {{ manager.get_full_name|default:manager.username }}</h1>
+    </div>
+    <a class="btn secondary" href="{% url 'admin_managers' %}">Back</a>
+</header>
+
+<section class="panel form-panel wide-panel">
+    <form method="post" class="stacked-form">
+        {% csrf_token %}
+        <label>Name {{ form.name }}</label>
+        <label>Username {{ form.username }}</label>
+        <label>Role {{ form.role }}</label>
+        <label>Email {{ form.email }}</label>
+        <label>Mobile Number {{ form.mobile_number }}</label>
+        <div class="field-label">Assign Projects</div>
+        <div class="multi-select" data-multi-select>
+            <button class="multi-select-toggle" type="button" data-multi-toggle>
+                <span data-multi-label>Select</span>
+            </button>
+            <div class="multi-select-menu" data-multi-menu hidden>
+                {{ form.projects }}
+            </div>
+        </div>
+        <button class="btn primary" type="submit">Update Manager</button>
+    </form>
+</section>
+{% endblock %}

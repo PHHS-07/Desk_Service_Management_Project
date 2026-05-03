@@ -1,0 +1,171 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Client Payments | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'admin_dashboard' %}">Dashboard</a>
+<a href="{% url 'admin_clients' %}">Manage Clients</a>
+<a href="{% url 'admin_managers' %}">Managers</a>
+<a href="{% url 'admin_projects' %}">Manage Projects</a>
+<a href="{% url 'admin_requests' %}">Client Requests</a>
+<a class="active" href="{% url 'admin_payments' %}">Client Payment</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Billing Control</p>
+        <h1>Client payment tracking</h1>
+    </div>
+    <div class="header-actions">
+        <button class="btn secondary" type="button" data-toggle-panel="request-payment-panel">Request Payment</button>
+        <button class="btn primary" type="button" data-toggle-panel="add-payment-panel">Add Payment</button>
+    </div>
+</header>
+
+<section class="stats-grid compact">
+    <article class="stat-card hover-card"><span>Requested</span><strong>₹{{ stats.requested }}</strong></article>
+    <article class="stat-card success hover-card"><span>Income</span><strong>₹{{ stats.received }}</strong></article>
+    <article class="stat-card warn hover-card"><span>Remaining</span><strong>₹{{ stats.remaining }}</strong></article>
+</section>
+
+<div class="wide-page-grid">
+    <div class="detail-grid form-split">
+        <section class="panel collapsible-panel" id="request-payment-panel" hidden>
+            <h2>Request Payment</h2>
+            <form method="post" class="stacked-form">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="request">
+                <label>Client {{ request_form.client }}</label>
+                <label>Project {{ request_form.project }}</label>
+                <label>Request {{ request_form.request }}</label>
+                <label>Request Amount {{ request_form.amount }}</label>
+                <label>Date {{ request_form.date }}</label>
+                <label>Notes {{ request_form.notes }}</label>
+                <button class="btn primary" type="submit">Create Request</button>
+            </form>
+        </section>
+
+        <section class="panel collapsible-panel" id="add-payment-panel" hidden>
+            <h2>Add Payment</h2>
+            <form method="post" class="stacked-form">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="receive">
+                <label>Payment Request {{ receive_form.payment }}</label>
+                <label>Approved Payment Proof IDs {{ receive_form.approved_proofs }}</label>
+                <label>Paid Amount {{ receive_form.amount }}</label>
+                <label>Date {{ receive_form.date }}</label>
+                <label>Notes {{ receive_form.notes }}</label>
+                <button class="btn primary" type="submit">Record Payment</button>
+            </form>
+        </section>
+    </div>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Payment Records</h2>
+            <span class="muted">{{ payments|length }} records</span>
+        </div>
+        <div class="payment-card-grid">
+            {% for payment in payments %}
+                <article class="payment-card hover-card payment-record-card">
+                    <div class="payment-card-head">
+                        <div>
+                            <strong>{{ payment.client.get_full_name|default:payment.client.username }}</strong>
+                            <span>{{ payment.project.name|default:'No project' }} · {{ payment.request.title|default:'General payment' }}</span>
+                        </div>
+                        <span class="badge {{ payment.status }}">{{ payment.get_status_display }}</span>
+                    </div>
+                    <div class="amount-stack">
+                        <strong>₹{{ payment.paid_amount }} / ₹{{ payment.amount }}</strong>
+                        <span>Remaining ₹{{ payment.remaining_amount }}</span>
+                    </div>
+                    <footer>{{ payment.date|date:'M d, Y' }}</footer>
+                    <button class="link-btn more-info" type="button" data-modal-title="Payment Record #{{ payment.pk }}" data-modal-body="Client: {{ payment.client.get_full_name|default:payment.client.username }}|Project: {{ payment.project.name|default:'No project' }}|Purpose: {{ payment.request.title|default:'General payment' }}|Requested Amount: ₹{{ payment.amount }}|Paid Amount: ₹{{ payment.paid_amount }}|Remaining: ₹{{ payment.remaining_amount }}|Status: {{ payment.get_status_display }}|Date: {{ payment.date|date:'M d, Y' }}|Notes: {{ payment.notes|default:'-' }}">More Info</button>
+                </article>
+            {% empty %}
+                <p class="empty">No payments have been added.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Uploaded Payment Proofs</h2>
+            <span class="muted">{{ proofs|length }} submissions</span>
+        </div>
+        <div class="payment-card-grid">
+            {% for proof in proofs %}
+                <article class="payment-card hover-card proof-card">
+                    <span class="badge {{ proof.status }}">{{ proof.get_status_display }}</span>
+                    <h3>Proof #{{ proof.pk }}</h3>
+                    <p>{{ proof.client.get_full_name|default:proof.client.username }}</p>
+                    <p>{{ proof.payment.project.name|default:'No project' }} · {{ proof.payment.request.title|default:'General payment' }}</p>
+                    <div class="amount-stack"><strong>₹{{ proof.amount }}</strong><span>{{ proof.created_at|date:'M d, Y h:i A' }}</span></div>
+                    {% if proof.proof_image %}
+                        <a class="link-btn" href="{{ proof.proof_image.url }}" target="_blank">View Proof</a>
+                        <a class="link-btn" href="{{ proof.proof_image.url }}" download>Download Proof</a>
+                    {% endif %}
+                    {% if proof.status == 'pending' %}
+                        <div class="row-actions">
+                            <form method="post" action="{% url 'admin_payment_proof_review' proof.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reviewed">
+                                <button class="link-btn" type="submit">Mark Reviewed</button>
+                            </form>
+                            <form method="post" action="{% url 'admin_payment_proof_review' proof.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="rejected">
+                                <button class="link-btn danger" type="submit">Reject</button>
+                            </form>
+                        </div>
+                    {% endif %}
+                </article>
+            {% empty %}
+                <p class="empty">No payment proofs uploaded yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <h2>Individual Client Ledger</h2>
+            <span class="muted">Approved recorded payments only</span>
+        </div>
+        <form class="filter-grid" method="get">
+            <label>Client
+                <select name="ledger_client">
+                    <option value="">All clients</option>
+                    {% for client in ledger_clients %}
+                        <option value="{{ client.pk }}" {% if selected_ledger_client == client.pk|stringformat:'s' %}selected{% endif %}>{{ client.get_full_name|default:client.username }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button class="btn primary" type="submit">View Ledger</button>
+                <a class="btn secondary" id="download-ledger-btn" href="?{% if selected_ledger_client %}ledger_client={{ selected_ledger_client }}&{% endif %}download=ledger">Download Ledger</a>
+            </div>
+        </form>
+        <div class="ledger-table">
+            <table>
+                <thead><tr><th>Date</th><th>Client</th><th>Project</th><th>Purpose</th><th>Paid</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for payment in ledger_payments %}
+                    <tr>
+                        <td>{{ payment.date|date:'M d, Y' }}</td>
+                        <td>{{ payment.client.get_full_name|default:payment.client.username }}</td>
+                        <td>{{ payment.project.name|default:'No project' }}</td>
+                        <td>{{ payment.request.title|default:'General payment' }}</td>
+                        <td>₹{{ payment.paid_amount }}</td>
+                        <td><span class="badge {{ payment.status }}">{{ payment.get_status_display }}</span></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="empty">No approved payments for this ledger.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

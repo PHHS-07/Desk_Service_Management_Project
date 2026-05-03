@@ -1,0 +1,45 @@
+from django.urls import path
+from django.contrib.auth import views as auth_views
+
+from . import views
+
+urlpatterns = [
+    path('', views.dashboard_redirect, name='dashboard_redirect'),
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
+    path('signup/', views.signup_view, name='signup'),
+    path('password-reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+        template_name='core/password_reset_confirm.html',
+        success_url='/login/',
+    ), name='password_reset_confirm'),
+    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin-dashboard/clients/', views.admin_clients, name='admin_clients'),
+    path('admin-dashboard/clients/<int:pk>/edit/', views.admin_client_edit, name='admin_client_edit'),
+    path('admin-dashboard/clients/<int:pk>/send-reset/', views.admin_client_send_reset, name='admin_client_send_reset'),
+    path('admin-dashboard/clients/<int:pk>/delete/', views.admin_client_delete, name='admin_client_delete'),
+    path('admin-dashboard/managers/', views.admin_managers, name='admin_managers'),
+    path('admin-dashboard/managers/<int:pk>/edit/', views.admin_manager_edit, name='admin_manager_edit'),
+    path('admin-dashboard/managers/<int:pk>/delete/', views.admin_manager_delete, name='admin_manager_delete'),
+    path('admin-dashboard/managers/<int:pk>/send-reset/', views.admin_manager_send_reset, name='admin_manager_send_reset'),
+    path('admin-dashboard/projects/', views.admin_projects, name='admin_projects'),
+    path('admin-dashboard/projects/<int:pk>/edit/', views.admin_project_edit, name='admin_project_edit'),
+    path('admin-dashboard/projects/<int:pk>/delete/', views.admin_project_delete, name='admin_project_delete'),
+    path('admin-dashboard/requests/', views.admin_requests, name='admin_requests'),
+    path('admin-dashboard/requests/<int:pk>/', views.admin_request_detail, name='admin_request_detail'),
+    path('requests/<int:pk>/attachments/download/', views.request_attachments_download, name='request_attachments_download'),
+    path('admin-dashboard/requests/<int:pk>/update/', views.admin_request_update, name='admin_request_update'),
+    path('admin-dashboard/payments/', views.admin_payments, name='admin_payments'),
+    path('admin-dashboard/payments/<int:pk>/update/', views.admin_payment_update, name='admin_payment_update'),
+    path('admin-dashboard/payment-proofs/<int:pk>/review/', views.admin_payment_proof_review, name='admin_payment_proof_review'),
+    path('logs/', views.logs_view, name='logs'),
+    path('manager-dashboard/', views.manager_dashboard, name='manager_dashboard'),
+    path('manager-dashboard/projects/', views.manager_projects, name='manager_projects'),
+    path('manager-dashboard/requests/', views.manager_requests, name='manager_requests'),
+    path('manager-dashboard/requests/<int:pk>/', views.manager_request_detail, name='manager_request_detail'),
+    path('manager-dashboard/admin-requests/', views.manager_admin_requests, name='manager_admin_requests'),
+    path('admin-dashboard/managers/<int:pk>/message/', views.admin_send_manager_message, name='admin_send_manager_message'),
+    path('client-dashboard/', views.client_dashboard, name='client_dashboard'),
+    path('client-dashboard/request/new/', views.client_request_new, name='client_request_new'),
+    path('client-dashboard/payments/', views.client_payments, name='client_payments'),
+    path('ajax/username-available/', views.username_available, name='username_available'),
+]

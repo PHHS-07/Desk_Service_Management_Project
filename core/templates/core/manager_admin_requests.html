@@ -1,0 +1,41 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Admin Requests | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'manager_dashboard' %}">Dashboard</a>
+<a href="{% url 'manager_projects' %}">Projects</a>
+<a href="{% url 'manager_requests' %}">Client Requests</a>
+<a class="active" href="{% url 'manager_admin_requests' %}">Admin Requests</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Notifications</p>
+        <h1>Admin Requests</h1>
+    </div>
+</header>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Messages from Admin</h2>
+        <span class="muted">{{ queries|length }} items</span>
+    </div>
+    <div class="request-cards single-grid">
+        {% for item in queries %}
+            <article class="request-card log-card">
+                <div class="card-meta">
+                    <span class="badge {{ item.status }}">{{ item.get_status_display }}</span>
+                    <time>{{ item.created_at|date:'M d, Y h:i A' }}</time>
+                </div>
+                <h3>{{ item.title }}</h3>
+                <div class="description" style="margin-top:12px; white-space: pre-wrap;">{{ item.message }}</div>
+            </article>
+        {% empty %}
+            <p class="empty">No requests from admin yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

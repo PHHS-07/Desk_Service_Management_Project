@@ -1,0 +1,17 @@
+{% extends 'core/auth_base.html' %}
+
+{% block title %}Login | Roriri Project Desk{% endblock %}
+
+{% block auth_content %}
+<div class="auth-card">
+    <p class="eyebrow">Welcome back</p>
+    <h2>Sign in to your workspace</h2>
+    <form method="post" class="stacked-form" data-no-username-check>
+        {% csrf_token %}
+        <label>Username {{ form.username }}</label>
+        <label>Password {{ form.password }}</label>
+        <button class="btn primary" type="submit">Login</button>
+    </form>
+    <p class="muted center">Client accounts are created by the admin team.</p>
+</div>
+{% endblock %}

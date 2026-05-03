@@ -1,0 +1,126 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Client Dashboard | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a class="{% if active_nav == 'dashboard' %}active{% endif %}" href="{% url 'client_dashboard' %}">Dashboard</a>
+<a href="{% url 'client_request_new' %}">Post a Request</a>
+<a href="{% url 'client_payments' %}">Payments</a>
+{% endblock %}
+
+{% block content %}
+<div class="client-roadmap-page">
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Client Workspace</p>
+        <h1>Your project roadmap</h1>
+    </div>
+    <a class="btn secondary" href="{% url 'client_request_new' %}">New Request</a>
+</header>
+
+<section class="stats-grid compact">
+    <article class="stat-card"><span>Total Requests</span><strong>{{ stats.requests }}</strong></article>
+    <article class="stat-card warn"><span>Pending</span><strong>{{ stats.pending }}</strong></article>
+    <article class="stat-card"><span>In Progress</span><strong>{{ stats.in_progress }}</strong></article>
+    <article class="stat-card success"><span>Completed</span><strong>{{ stats.completed }}</strong></article>
+    <article class="stat-card"><span>Requested</span><strong>Rs. {{ stats.requested_amount }}</strong></article>
+    <article class="stat-card success"><span>Paid</span><strong>Rs. {{ stats.paid_amount }}</strong></article>
+    <article class="stat-card warn"><span>Remaining</span><strong>Rs. {{ stats.remaining_amount }}</strong></article>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Project Roadmap</h2>
+        <span class="muted">Development visibility by project</span>
+    </div>
+    <form method="get" class="filter-grid roadmap-filter">
+        <label>Project
+            <select name="project">
+                <option value="">Select</option>
+                {% for project in projects %}
+                    <option value="{{ project.pk }}" {% if selected_project == project.pk|stringformat:'s' %}selected{% endif %}>{{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button class="btn primary" type="submit">View Roadmap</button>
+    </form>
+    <div class="roadmap-grid">
+        {% for group in roadmap_projects %}
+            <article class="roadmap-card">
+                <header>
+                    <h3>{{ group.project.name }}</h3>
+                    <span class="badge {{ group.project.status }}">{{ group.project.get_status_display }}</span>
+                </header>
+                <div class="roadmap-blocks">
+                    <section>
+                        <h4>Requirements</h4>
+                        <ul>
+                            <li>Service requests: {{ group.request_count }}</li>
+                            <li>Latest scope: {% if group.requests %}{{ group.requests.0.title }}{% else %}Awaiting first request{% endif %}</li>
+                            <li>Priority workstream tracking active</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h4>Guidelines</h4>
+                        <ul>
+                            <li>Review manager updates in each request thread</li>
+                            <li>Use status cards for release readiness</li>
+                            <li>Submit proof for each payment milestone</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h4>Project Assets</h4>
+                        <ul>
+                            <li>Client requests and descriptions archived</li>
+                            <li>Payment proofs and ledger records available</li>
+                            <li>Project communication in request responses</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h4>Milestones</h4>
+                        <ul>
+                            <li>Completed: {{ group.completed_count }}</li>
+                            <li>Payments raised: {{ group.payments|length }}</li>
+                            <li>Outstanding amount: Rs. {{ group.remaining_total }}</li>
+                        </ul>
+                    </section>
+                </div>
+            </article>
+        {% empty %}
+            <p class="empty">No project roadmap available yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Request History</h2>
+        <span class="muted">Project wise</span>
+    </div>
+    <div class="project-grid">
+        {% for group in project_history %}
+            <article class="project-card">
+                <h3>{{ group.project.name }}</h3>
+                <div class="request-cards">
+                    {% for item in group.requests %}
+                        <article class="request-card">
+                            <span class="badge {{ item.status }}">{{ item.get_status_display }}</span>
+                            <h3>{{ item.title }}</h3>
+                            <p>{{ item.description|truncatechars:120 }}</p>
+                            <footer><span>{{ item.get_service_type_display }}</span><span>{{ item.created_at|date:'M d, Y' }}</span></footer>
+                            {% if item.admin_response %}
+                                <div class="response-box"><strong>Admin response</strong><p>{{ item.admin_response }}</p></div>
+                            {% endif %}
+                        </article>
+                    {% empty %}
+                        <p class="empty">No requests for this project.</p>
+                    {% endfor %}
+                </div>
+            </article>
+        {% empty %}
+            <p class="empty">Your requests will appear here after submission.</p>
+        {% endfor %}
+    </div>
+</section>
+</div>
+{% endblock %}

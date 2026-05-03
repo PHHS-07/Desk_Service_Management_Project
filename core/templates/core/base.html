@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Roriri Project Desk{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'core/img/new_logo.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'core/img/new_logo.png' %}">
+    <link rel="stylesheet" href="{% static 'core/css/styles.css' %}?v=20260429-1">
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    </script>
+</head>
+<body>
+    {% block body %}{% endblock %}
+    <div class="app-loader" id="app-loader" hidden><span></span><strong>Loading</strong></div>
+    <div class="dialog-backdrop" id="confirm-dialog" hidden>
+        <div class="dialog-box">
+            <button class="dialog-close" type="button" data-dialog-cancel>&times;</button>
+            <h3>Are you sure?</h3>
+            <p id="confirm-dialog-message">Are you sure want to delete?</p>
+            <div class="dialog-actions">
+                <button class="btn secondary" type="button" data-dialog-cancel>No</button>
+                <button class="btn primary" type="button" data-dialog-confirm>Yes</button>
+            </div>
+        </div>
+    </div>
+    <div class="dialog-backdrop" id="info-dialog" hidden>
+        <div class="dialog-box">
+            <button class="dialog-close" type="button" data-info-close>&times;</button>
+            <h3 id="info-dialog-title">Details</h3>
+            <div id="info-dialog-body"></div>
+        </div>
+    </div>
+    <script src="{% static 'core/js/app.js' %}?v=20260429-1"></script>
+    {% block extra_script %}{% endblock %}
+</body>
+</html>

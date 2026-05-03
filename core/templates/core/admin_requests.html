@@ -1,0 +1,90 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Client Requests | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+{% if manager_mode %}
+<a href="{% url 'manager_dashboard' %}">Dashboard</a>
+<a href="{% url 'manager_projects' %}">Projects</a>
+<a class="active" href="{% url 'manager_requests' %}">Client Requests</a>
+<a href="{% url 'manager_admin_requests' %}">Admin Requests</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% else %}
+<a href="{% url 'admin_dashboard' %}">Dashboard</a>
+<a href="{% url 'admin_clients' %}">Manage Clients</a>
+<a href="{% url 'admin_managers' %}">Managers</a>
+<a href="{% url 'admin_projects' %}">Manage Projects</a>
+<a class="active" href="{% url 'admin_requests' %}">Client Requests</a>
+<a href="{% url 'admin_payments' %}">Client Payment</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Delivery Queue</p>
+        <h1>Client requests</h1>
+    </div>
+</header>
+
+<section class="panel filter-panel">
+    <form method="get" class="filter-grid">
+        <label>Client
+            <select name="client">
+                <option value="">All clients</option>
+                {% for client in clients %}<option value="{{ client.pk }}">{{ client.get_full_name|default:client.username }}</option>{% endfor %}
+            </select>
+        </label>
+        <label>Project
+            <select name="project">
+                <option value="">All projects</option>
+                {% for project in projects %}<option value="{{ project.pk }}">{{ project.name }}</option>{% endfor %}
+            </select>
+        </label>
+        <label>Manager
+            <select name="manager">
+                <option value="">All managers</option>
+                {% for manager in managers %}<option value="{{ manager.pk }}">{{ manager.get_full_name|default:manager.username }}</option>{% endfor %}
+            </select>
+        </label>
+        <label>Sort By
+            <select name="sort">
+                <option value="recent">Recent</option>
+                <option value="oldest">Oldest</option>
+            </select>
+        </label>
+        <label>From <input type="date" name="date_from"></label>
+        <label>To <input type="date" name="date_to"></label>
+        <button class="btn primary" type="submit">Apply Filters</button>
+    </form>
+</section>
+
+<section class="panel wide-panel">
+    <div class="panel-heading">
+        <h2>All Requests</h2>
+        <span class="muted">{{ requests|length }} total</span>
+    </div>
+    <div class="request-cards admin-request-grid">
+            {% for item in requests %}
+                <article class="request-card hover-card">
+                    <span class="badge {{ item.status }}">{{ item.get_status_display }}</span>
+                    <h3>{{ item.title }}</h3>
+                    <p>{{ item.description|truncatechars:130 }}</p>
+                    <footer>
+                        <span>{{ item.client.get_full_name|default:item.client.username }}</span>
+                        <span>{{ item.project.name|default:'No project' }}</span>
+                        <span>{{ item.created_at|date:'M d, Y h:i A' }}</span>
+                    </footer>
+                    {% if manager_mode %}
+                    <a class="link-btn" href="{% url 'manager_request_detail' item.pk %}">Open</a>
+                    {% else %}
+                    <a class="link-btn" href="{% url 'admin_request_detail' item.pk %}">Open</a>
+                    {% endif %}
+                </article>
+            {% empty %}
+                <p class="empty">No client requests yet.</p>
+            {% endfor %}
+    </div>
+</section>
+{% endblock %}

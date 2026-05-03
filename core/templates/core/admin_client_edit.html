@@ -1,0 +1,34 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Edit Client | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'admin_dashboard' %}">Dashboard</a>
+<a class="active" href="{% url 'admin_clients' %}">Manage Clients</a>
+<a href="{% url 'admin_managers' %}">Managers</a>
+<a href="{% url 'admin_projects' %}">Manage Projects</a>
+<a href="{% url 'admin_requests' %}">Client Requests</a>
+<a href="{% url 'admin_payments' %}">Client Payment</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Client Record</p>
+        <h1>Edit {{ client.get_full_name|default:client.username }}</h1>
+    </div>
+    <a class="btn secondary" href="{% url 'admin_clients' %}">Back</a>
+</header>
+
+<section class="panel form-panel">
+    <form method="post" class="stacked-form">
+        {% csrf_token %}
+        <label>Name {{ form.name }}</label>
+        <label>Username {{ form.username }}</label>
+        <label>Email {{ form.email }}</label>
+        <label>Mobile Number {{ form.mobile_number }}</label>
+        <button class="btn primary" type="submit">Save Changes</button>
+    </form>
+</section>
+{% endblock %}

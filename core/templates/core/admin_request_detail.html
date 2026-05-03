@@ -1,0 +1,68 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Request Detail | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+{% if manager_mode %}
+<a href="{% url 'manager_dashboard' %}">Dashboard</a>
+<a href="{% url 'manager_projects' %}">Projects</a>
+<a class="active" href="{% url 'manager_requests' %}">Client Requests</a>
+<a href="{% url 'manager_admin_requests' %}">Admin Requests</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% else %}
+<a href="{% url 'admin_dashboard' %}">Dashboard</a>
+<a href="{% url 'admin_clients' %}">Manage Clients</a>
+<a href="{% url 'admin_managers' %}">Managers</a>
+<a href="{% url 'admin_projects' %}">Manage Projects</a>
+<a class="active" href="{% url 'admin_requests' %}">Client Requests</a>
+<a href="{% url 'admin_payments' %}">Client Payment</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">{{ client_request.get_service_type_display }}</p>
+        <h1>{{ client_request.title }}</h1>
+        <p class="muted">Submitted by {{ client_request.client.get_full_name|default:client_request.client.username }} on {{ client_request.created_at|date:'M d, Y h:i A' }}</p>
+    </div>
+    <div class="header-actions">
+        {% if manager_mode %}
+        <a class="btn secondary" href="{% url 'manager_requests' %}">Back</a>
+        {% else %}
+        <a class="btn secondary" href="{% url 'admin_requests' %}">Back</a>
+        {% endif %}
+        <span class="badge {{ client_request.status }}">{{ client_request.get_status_display }}</span>
+    </div>
+</header>
+
+<div class="detail-grid">
+    <section class="panel">
+        <h2>Request Brief</h2>
+        <p class="description">{{ client_request.description }}</p>
+        {% if has_attachments %}
+            <a class="link-btn" href="{% url 'request_attachments_download' client_request.pk %}">Download Brief Files</a>
+        {% else %}
+            <button class="link-btn disabled-btn" type="button" disabled>Download Brief Files</button>
+        {% endif %}
+    </section>
+    <section class="panel">
+        <h2>Update Client</h2>
+        <form method="post" enctype="multipart/form-data" action="{% if manager_mode %}{% url 'manager_request_detail' client_request.pk %}{% else %}{% url 'admin_request_update' client_request.pk %}{% endif %}" class="stacked-form">
+            {% csrf_token %}
+            <label>Status {{ form.status }}</label>
+            <label>Response {{ form.admin_response }}</label>
+            <label>Upload Files {{ form.upload_file }}</label>
+            <button class="btn primary" type="submit">Save Update</button>
+        </form>
+        <div class="attachment-list">
+            {% for attachment in client_request.attachments.all %}
+                <a class="project-chip" href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name }} - {{ attachment.created_at|date:'M d, Y h:i A' }}</a>
+            {% empty %}
+                <span class="muted">No files uploaded yet.</span>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Assigned Projects | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a href="{% url 'manager_dashboard' %}">Dashboard</a>
+<a class="active" href="{% url 'manager_projects' %}">Projects</a>
+<a href="{% url 'manager_requests' %}">Client Requests</a>
+<a href="{% url 'manager_admin_requests' %}">Admin Requests</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Project Scope</p>
+        <h1>Your projects</h1>
+    </div>
+</header>
+
+<section class="panel">
+    <div class="project-grid">
+        {% for project in projects %}
+            <article class="project-card hover-card">
+                <span class="badge {{ project.status }}">{{ project.get_status_display }}</span>
+                <h3>{{ project.name }}</h3>
+                <p>{{ project.description|default:'No description added.' }}</p>
+                <div class="project-clients"><strong>Clients</strong>
+                    {% for client in project.clients.all %}<span>{{ client.get_full_name|default:client.username }}</span>{% empty %}<span>No clients</span>{% endfor %}
+                </div>
+                <footer>{{ project.created_at|date:'M d, Y h:i A' }}</footer>
+            </article>
+        {% empty %}
+            <p class="empty">No projects assigned yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'core/dashboard_base.html' %}
+
+{% block title %}Admin Dashboard | Roriri Project Desk{% endblock %}
+
+{% block nav %}
+<a class="active" href="{% url 'admin_dashboard' %}">Dashboard</a>
+<a href="{% url 'admin_clients' %}">Manage Clients</a>
+<a href="{% url 'admin_managers' %}">Managers</a>
+<a href="{% url 'admin_projects' %}">Manage Projects</a>
+<a href="{% url 'admin_requests' %}">Client Requests</a>
+<a href="{% url 'admin_payments' %}">Client Payment</a>
+<a href="{% url 'logs' %}">Logs</a>
+{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Admin Control</p>
+        <h1>Project operations dashboard</h1>
+    </div>
+    <a class="btn secondary" href="{% url 'admin_requests' %}">Review Requests</a>
+</header>
+
+<section class="stats-grid">
+    <article class="stat-card"><span>Total Clients</span><strong>{{ stats.clients }}</strong></article>
+    <article class="stat-card"><span>Total Projects</span><strong>{{ stats.total_projects }}</strong></article>
+    <article class="stat-card warn"><span>Active Projects</span><strong>{{ stats.active_projects }}</strong></article>
+    <article class="stat-card success"><span>Completed</span><strong>{{ stats.completed_projects }}</strong></article>
+    <article class="stat-card"><span>Total Quoted Income</span><strong>₹{{ stats.payment_total }}</strong></article>
+    <article class="stat-card success"><span>Income Received</span><strong>₹{{ stats.received_total }}</strong>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Income Overview</h2>
+        <span class="muted">Monthly income received</span>
+    </div>
+    <div class="curve-graph-container" style="position: relative; height: 250px; margin-top: 20px;">
+        <svg id="income-curve-svg" width="100%" height="100%" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="curve-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.4" />
+                    <stop offset="100%" stop-color="var(--brand)" stop-opacity="0" />
+                </linearGradient>
+            </defs>
+            <path id="curve-area" fill="url(#curve-gradient)" d=""></path>
+            <path id="curve-line" fill="none" stroke="var(--brand)" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" class="animated-curve" d=""></path>
+        </svg>
+        <div id="curve-labels" class="curve-labels"></div>
+        <div id="curve-points" class="curve-points"></div>
+    </div>
+</section>
+
+{{ monthly_income|json_script:"income-data" }}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dataContainer = document.getElementById('income-data');
+    if (!dataContainer) return;
+    const data = JSON.parse(dataContainer.textContent);
+    
+    const svg = document.getElementById('income-curve-svg');
+    const pathLine = document.getElementById('curve-line');
+    const pathArea = document.getElementById('curve-area');
+    const labelsContainer = document.getElementById('curve-labels');
+    const pointsContainer = document.getElementById('curve-points');
+
+    if (!data || data.length === 0) {
+        if (labelsContainer) labelsContainer.innerHTML = '<span style="left:50%; top:50%; transform:translate(-50%,-50%); color:var(--muted); font-weight:normal; opacity:0.6;">No data points yet</span>';
+        return;
+    }
+
+    const w = 100;
+    const h = 100;
+    const len = data.length;
+    
+    let points = data.map((d, i) => {
+        const x = len > 1 ? (i / (len - 1)) * w : 50; 
+        return { x: x, y: 100 - (d.percent * 0.85 + 5) }; 
+    });
+
+    if (len > 1) {
+        let dLine = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+            let p0 = points[i];
+            let p1 = points[i + 1];
+            let cx = (p0.x + p1.x) / 2;
+            dLine += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`;
+        }
+        pathLine.setAttribute('d', dLine);
+        
+        let dArea = dLine + ` L ${points[points.length-1].x} 100 L ${points[0].x} 100 Z`;
+        pathArea.setAttribute('d', dArea);
+    } else {
+        pathLine.setAttribute('d', `M 40 ${points[0].y} L 60 ${points[0].y}`);
+        pathArea.setAttribute('d', `M 40 ${points[0].y} L 60 ${points[0].y} L 60 100 L 40 100 Z`);
+    }
+
+    svg.setAttribute('viewBox', `0 0 100 100`);
+
+    data.forEach((d, i) => {
+        const xPos = len > 1 ? (i / (len - 1)) * 100 : 50;
+        
+        const label = document.createElement('span');
+        label.textContent = d.month;
+        label.style.left = `${xPos}%`;
+        labelsContainer.appendChild(label);
+
+        const point = document.createElement('div');
+        point.className = 'curve-point';
+        point.style.left = `${xPos}%`;
+        point.style.bottom = `${d.percent * 0.85 + 5}%`;
+        point.setAttribute('data-tooltip', `₹${d.total}`);
+        pointsContainer.appendChild(point);
+    });
+});
+</script>
+
+<section class="panel">
+    <div class="panel-heading">
+        <h2>Recent Requests</h2>
+        <a class="link-btn" href="{% url 'admin_requests' %}">View all</a>
+    </div>
+    <div class="request-cards dashboard-preview">
+        {% for item in requests|slice:':4' %}
+        <article class="request-card recent-request-card">
+            <span class="badge {{ item.status }}">{{ item.get_status_display }}</span>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.client.get_full_name|default:item.client.username }} · {{ item.get_service_type_display }}</p>
+            <a class="link-btn open-btn" href="{% url 'admin_request_detail' item.pk %}">Open</a>
+        </article>
+        {% empty %}
+        <p class="empty">No client requests yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
